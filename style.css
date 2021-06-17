@@ -1,0 +1,14 @@
+#player{ 
+    pointer-events: none;
+    width: 50%;
+    height: 100%;
+    margin-left: 25%;
+}
+
+#playerControls{
+    margin-left: 25%;
+}
+
+body{ 
+    height: 500px;
+}

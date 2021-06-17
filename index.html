@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet"  href="style.css">
+ </head>
+  <body>
+      <div id="player"></div>
+      <div id = "playerControls">
+        <button onclick="socket.emit('play')" id= "playButton">Play</button>
+        <button onclick="socket.emit('pause');" id= "pauseButton">Pause</button>
+        <div id = "timeline">
+          <div id = "scrub"></div>
+        </div>
+      </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      let socket = io();
+      var tag = document.createElement('script');
+      tag.src = "http://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      var player;
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player('player', {
+          videoId: 'mcka-CWUOOA',
+          playerVars: {
+            'controls': 0,
+            'disablekb': 1,
+            'modestbranding': 1,
+            'rel': 0,
+          },
+          events: {
+            'onReady': makeAvailable()
+
+          }
+        });
+      } 
+
+      let available = false;
+
+      function makeAvailable(){
+        available = true;
+        console.log("available")
+      }
+
+      function playVideo() {
+        console.log("recieved play")
+        if(available){
+          player.playVideo();  
+        }
+      }
+
+      function pauseVideo(){
+        console.log("recieved pause")
+        if(available){
+          player.pauseVideo()
+        }
+      }
+
+      socket.on('play', function(data) {
+        playVideo()
+      });
+      socket.on('pause', function(data) {
+        pauseVideo()
+      });
+
+    </script>
+  </body>
+</html>

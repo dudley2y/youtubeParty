@@ -16,8 +16,6 @@ app.get('/', (req, res) => {
 
 app.get('/ytVideo/:id', (req,res) => {
     res.sendFile(path.join(__dirname, "/index.html"))
-    
-    //res.send("welcome to yotube video with id " + req.params.id)
 })
 
 io.on('connection', (socket) => {

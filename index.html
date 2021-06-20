@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet"  href="style.css">
+    <link rel="stylesheet"  href="/style.css">
  </head>
   <body>
       <div id="player"></div>
       <div id = "playerControls">
-        <button onclick="socket.emit('play')" id= "playButton">Play</button>
-        <button onclick="socket.emit('pause');" id= "pauseButton">Pause</button>
+        <button onclick="playOnClick()" id= "playButton">Play</button>
+        <button onclick="pauseOnClick()" id= "pauseButton">Pause</button>
         <div id = "timeline">
           <div id = "scrub"></div>
         </div>
@@ -16,13 +16,15 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
       let socket = io();
+
+      let path = window.location.pathname.split('/');
+      let videoId = path[path.length-1]
+
       var tag = document.createElement('script');
       tag.src = "http://www.youtube.com/iframe_api";
       var firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-      let path = window.location.pathname.split('/');
-      let videoId = path[path.length-1]
-      console.log(videoId)
+      
       var player;
       function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
@@ -35,7 +37,6 @@
           },
           events: {
             'onReady': makeAvailable()
-
           }
         });
       } 
@@ -45,6 +46,15 @@
       function makeAvailable(){
         available = true;
         console.log("available")
+        socket.emit("joinedRoom", videoId)
+      }
+
+      function playOnClick(){
+        socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'play' })
+      }
+
+      function pauseOnClick(){ 
+        socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'pause'})
       }
 
       function playVideo() {
@@ -61,12 +71,58 @@
         }
       }
 
-      socket.on('play', function(data) {
-        playVideo()
-      });
-      socket.on('pause', function(data) {
-        pauseVideo()
-      });
+      function setTime(data){
+        console.log(data.time)
+        player.seekTo(50, true)
+      }
+
+      socket.on('update', (data) => {
+        if(data.action == 'play'){
+          setTime(data)
+          playVideo()
+        }
+        else if(data.action == 'pause'){
+          setTime(data)
+          pauseVideo()
+        }
+        else{
+          setTime(data)
+        }
+      })
+
+      socket.on("updateNewUser", (newUser) => {
+        // send current state
+        if(socket.id == newUser){
+          console.log("is self in updateNewUser")
+          return
+        }
+
+        let currState = player.getPlayerState()
+        console.log(currState)
+        if(currState == -1){ // unstarted
+          console.log("unstarted")
+          socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'nothing', user: newUser})
+        }
+        else if(currState == 0){ // ended
+          console.log("ended")
+          socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'nothing', user: newUser})
+        }
+        else if(currState == 1){ // playing
+          console.log("playing")
+          socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'play', user: newUser})
+        }
+        else if(currState == 2){ // paused
+          console.log("paused")
+          socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'pause', user: newUser})
+        }
+        else if(currState == 3){ // buffering
+          console.log("buffering")
+          socket.emit('event', { room: videoId, time: player.getCurrentTime(), action: 'nothing', user: newUser})
+        }
+        else{ // video cued
+        }
+      })
+
 
     </script>
   </body>

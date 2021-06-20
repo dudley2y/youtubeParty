@@ -19,13 +19,20 @@ app.get('/ytVideo/:id', (req,res) => {
 })
 
 io.on('connection', (socket) => {
-    
-    socket.on('play', (data) => {
-        io.emit('play', (data));
+
+    socket.on("joinedRoom", (roomId) => {
+        socket.join(roomId)
+        if(io.sockets.adapter.rooms.get(roomId).size > 1){
+            io.to(roomId).emit("updateNewUser", socket.id)
+        }
     })
 
-    socket.on('pause', (data) => {
-        io.emit('pause', (data));
+    socket.on("updateNewUser", (data) => { 
+        io.to(data.user).emit('update', data);
+    })
+
+    socket.on('event', (data) => {
+        io.to(data.room).emit('update', data)
     })
 });
 
